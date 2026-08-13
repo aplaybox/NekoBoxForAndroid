@@ -79,7 +79,6 @@ jobs:
           path: |
             app/libs/libcore.aar
           key: ${{ hashFiles('.github/workflows/*', 'golang_status', 'libcore_status') }}
-          fail-on-cache-miss: true
 
       - name: Gradle cache
         if: steps.skip.outputs.build == 'true'

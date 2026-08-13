@@ -79,12 +79,12 @@ jobs:
         run: git ls-files libcore | xargs cat | sha1sum > libcore_status
 
       - name: LibCore Cache
+        id: cache
         uses: actions/cache@v6
         with:
           path: |
             app/libs/libcore.aar
           key: ${{ hashFiles('.github/workflows/*', 'golang_status', 'libcore_status') }}
-          fail-on-cache-miss: true
 
       - name: Gradle cache
         uses: actions/cache@v6
@@ -111,6 +111,13 @@ jobs:
           else
             echo "WARNING: SIGNING_KEYSTORE secret not set; build will be unsigned"
           fi
+
+      - name: Verify LibCore artifact
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          echo "ERROR: libcore.aar not found and no cache hit. libcore job must run first."
+          ls -la app/libs/ 2>/dev/null || true
+          exit 1
 
       - name: Gradle Build
         env:
