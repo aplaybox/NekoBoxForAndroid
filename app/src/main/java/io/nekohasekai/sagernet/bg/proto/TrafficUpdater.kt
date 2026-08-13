@@ -19,6 +19,10 @@ class TrafficUpdater(
         var hasTrafficDelta: Boolean = false,
     )
 
+    // Reused across updateAll() invocations to avoid per-tick allocation
+    // of a HashMap plus its entry wrappers. Cleared (not replaced) each tick.
+    private val diffCache = HashMap<String, TrafficLooperData>(items.size)
+
     private fun updateOne(item: TrafficLooperData): TrafficLooperData {
         // last update
         val now = System.currentTimeMillis()
@@ -51,15 +55,16 @@ class TrafficUpdater(
     }
 
     fun updateAll() {
-        val updated = mutableMapOf<String, TrafficLooperData>() // diffs
+        // Reuse the same map instance; clear() keeps the backing array.
+        diffCache.clear()
         items.forEach { item ->
             item.hasTrafficDelta = false
             if (item.ignore) return@forEach
-            val diff = updated[item.tag]
+            val diff = diffCache[item.tag]
             // query a tag only once
             if (diff == null) {
                 val newDiff = updateOne(item)
-                updated[item.tag] = newDiff
+                diffCache[item.tag] = newDiff
                 item.hasTrafficDelta = newDiff.rx != 0L || newDiff.tx != 0L
             } else {
                 item.rx += diff.rx
