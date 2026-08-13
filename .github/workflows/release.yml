@@ -8,22 +8,16 @@ on:
         required: false
       publish:
         description: "Publish to GitHub Releases (y/n)"
-        type: choice
+        required: false
         default: "y"
-        options:
-          - "y"
-          - "n"
       variants:
         description: "Variants (comma-separated: main,m3e)"
         required: false
         default: "main,m3e"
       prerelease:
-        description: "Mark as prerelease"
-        type: choice
+        description: "Mark as prerelease (y/n)"
+        required: false
         default: "n"
-        options:
-          - "y"
-          - "n"
 
 jobs:
   libcore:

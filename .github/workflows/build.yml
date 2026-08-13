@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       publish_release:
-        description: "Publish as GitHub Release (tag from VERSION_NAME)"
-        type: boolean
-        default: false
+        description: "Publish as GitHub Release (y/n)"
+        required: false
+        default: "n"
       release_tag:
         description: "Release tag (override, default: v{VERSION_NAME})"
         required: false
@@ -144,7 +144,7 @@ jobs:
 
   publish:
     name: Publish Release
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish_release == 'true'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.publish_release == 'y'
     runs-on: ubuntu-latest
     needs: build
     steps:
