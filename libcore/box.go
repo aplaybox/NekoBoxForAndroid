@@ -203,6 +203,13 @@ func (b *BoxInstance) QueryStats(tag, direct string) int64 {
         if b.v2api == nil {
                 return 0
         }
+        // Don't query stats on a closed box — the underlying stats service may
+        // be torn down and the call could panic or return stale data. The
+        // TrafficLooper should have stopped by now, but this is a safety net
+        // for races between Close() and an in-flight tick.
+        if b.state == 2 {
+                return 0
+        }
         // Avoid fmt.Sprintf on every stats poll (this runs once per tag per
         // speed-interval tick = potentially dozens of times per second).
         // strings.Builder is faster than fmt.Sprintf for this simple pattern.

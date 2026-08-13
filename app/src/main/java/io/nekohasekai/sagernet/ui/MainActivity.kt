@@ -484,8 +484,19 @@ class MainActivity : ThemedActivity(),
 
     override fun onServiceDisconnected() = changeState(BaseService.State.Idle)
     override fun onBinderDied() {
-        connection.disconnect(this)
-        connection.connect(this, this)
+        // Guard against reconnecting a dying/dead activity. If the activity is
+        // finishing or destroyed, disconnect only and skip the reconnect to
+        // avoid leaking a ServiceConnection via a context that's about to die.
+        if (isFinishing || isDestroyed) {
+            connection.disconnect(this)
+            return
+        }
+        try {
+            connection.disconnect(this)
+            connection.connect(this, this)
+        } catch (e: Exception) {
+            Logs.w("onBinderDied reconnect failed: ${e.message}")
+        }
     }
 
     private val connect = registerForActivityResult(VpnRequestActivity.StartService()) {
