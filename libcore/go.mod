@@ -48,7 +48,7 @@ require (
         github.com/metacubex/randv2 v0.2.0 // indirect
         github.com/metacubex/sing v0.5.5 // indirect
         github.com/metacubex/tfo-go v0.0.0-20250921095601-b102db4216c0 // indirect
-        github.com/metacubex/utls v1.8.4 // indirect
+        github.com/metacubex/utls v1.8.7 // indirect
         github.com/mholt/acmez/v3 v3.1.2 // indirect
         github.com/quic-go/qpack v0.5.1 // indirect
         github.com/sagernet/bbolt v0.0.0-20231014093535-ea5cb2fe9f0a // indirect
