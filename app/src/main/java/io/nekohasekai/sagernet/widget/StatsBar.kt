@@ -21,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 class StatsBar @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null,
@@ -307,13 +308,28 @@ class StatsBar @JvmOverloads constructor(
         }"
     }
 
+    private var testJob: Job? = null
+
     fun testConnection() {
         val activity = context as MainActivity
+        // Prevent re-entrant taps while a test is already in flight.
+        if (testJob?.isActive == true) return
         isEnabled = false
         setStatus(app.getText(R.string.connection_test_testing))
-        runOnDefaultDispatcher {
+        testJob = runOnDefaultDispatcher {
             try {
-                val elapsed = activity.urlTest()
+                // Bound the blocking binder call so a stuck server-side urlTest
+                // (e.g. unreachable test URL) cannot keep the StatsBar disabled
+                // forever. The server-side timeout is DataStore.connectionTestTimeout
+                // (default 5s); we add a 2s grace margin on top.
+                val serverTimeout = DataStore.connectionTestTimeout.coerceAtLeast(3000)
+                val graceMs = 2000L
+                val elapsed = withTimeoutOrNull(serverTimeout.toLong() + graceMs) {
+                    activity.urlTest()
+                }
+                if (elapsed == null) {
+                    throw java.util.concurrent.TimeoutException("urlTest timed out")
+                }
                 onMainDispatcher {
                     isEnabled = true
                     setStatus(
@@ -339,6 +355,8 @@ class StatsBar @JvmOverloads constructor(
                         )
                     ).show()
                 }
+            } finally {
+                testJob = null
             }
         }
     }

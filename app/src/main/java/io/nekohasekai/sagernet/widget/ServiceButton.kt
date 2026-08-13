@@ -93,9 +93,35 @@ class ServiceButton @JvmOverloads constructor(
         if (!canceled) progress.hide()
     }
 
-    fun hideProgress() {
+    private fun hideProgress() {
         delayedAnimation?.cancel()
         progress.hide()
+    }
+
+    /**
+     * Force-clear the animation queue and cancel any pending delayed progress animation.
+     *
+     * Call this when the host activity/fragment is recreated or when the button
+     * is re-attached, to recover from a stuck queue (which can happen if an
+     * AnimatedVectorDrawable fails to call onAnimationEnd — e.g. when the view
+     * is detached mid-animation or animator scale is 0 in developer options).
+     */
+    fun forceReset() {
+        delayedAnimation?.cancel()
+        delayedAnimation = null
+        animationQueue.peekFirst()?.stop()
+        animationQueue.clear()
+        hideProgress()
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        // If re-attached with a stale queue (e.g. after config change), clear it
+        // so the next changeState call can start fresh instead of being blocked
+        // by a dangling entry whose onAnimationEnd will never fire.
+        if (animationQueue.isNotEmpty()) {
+            animationQueue.clear()
+        }
     }
 
     override fun onCreateDrawableState(extraSpace: Int): IntArray {
