@@ -135,7 +135,7 @@ object RawUpdater : GroupUpdater() {
                 if (!uniqueProxies.add(proxy)) {
                     val index = uniqueProxies.indexOf(proxy)
                     if (uniqueNames.containsKey(proxy)) {
-                        val name = uniqueNames[proxy]!!.replace(" ($index)", "")
+                        val name = (uniqueNames[proxy] ?: "").replace(" ($index)", "")
                         if (name.isNotBlank()) {
                             duplicate.add("$name ($index)")
                             uniqueNames[proxy] = ""

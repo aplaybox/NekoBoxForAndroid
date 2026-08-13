@@ -235,6 +235,10 @@ func UrlTest(i *BoxInstance, link string, timeout int32) (latency int32, err err
         var connectionTracker adapter.ConnectionTracker
         // test i
         if i != nil {
+                // Don't test on a closed box — underlying resources may be freed.
+                if i.state == 2 {
+                        return 0, errors.New("box already closed")
+                }
                 if i.v2api != nil {
                         connectionTracker = i.v2api.StatsService()
                 }

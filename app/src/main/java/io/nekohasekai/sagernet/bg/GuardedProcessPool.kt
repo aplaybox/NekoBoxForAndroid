@@ -93,7 +93,12 @@ class GuardedProcessPool(private val onFatal: suspend (IOException) -> Unit) : C
                         if (withTimeoutOrNull(1000) { exitChannel.receive() } != null) return@withContext
                         process.destroyForcibly()           // Force to kill the process if it's still alive
                     }
-                    exitChannel.receive()
+                    // Bound the final wait so a zombie process cannot block
+                    // the clean-up coroutine forever (which would leak the
+                    // GuardedProcessPool and prevent service shutdown).
+                    if (withTimeoutOrNull(2000) { exitChannel.receive() } == null) {
+                        Logs.w("process $cmdName did not exit after destroyForcibly; giving up")
+                    }
                 }                                           // otherwise process already exited, nothing to be done
             }
         }

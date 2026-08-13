@@ -147,12 +147,15 @@ class BaseService {
         }
 
         override fun urlTest(): Int {
-            if (data?.proxy?.box == null) {
+            // Snapshot the proxy/box reference to avoid a race where
+            // stopRunner nulls data.proxy between the null-check and the call.
+            val box = data?.proxy?.box
+            if (box == null) {
                 error("core not started")
             }
             try {
                 return Libcore.urlTest(
-                    data!!.proxy!!.box, DataStore.connectionTestURL, DataStore.connectionTestTimeout
+                    box, DataStore.connectionTestURL, DataStore.connectionTestTimeout
                 )
             } catch (e: Exception) {
                 error(Protocols.genFriendlyMsg(e.readableMessage))
