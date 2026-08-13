@@ -21,6 +21,9 @@ on:
       - 'buildSrc/**'
       - '.github/workflows/build.yml'
 
+permissions:
+  contents: write
+
 jobs:
   libcore:
     name: Native Build (LibCore)

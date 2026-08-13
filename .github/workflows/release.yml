@@ -19,6 +19,9 @@ on:
         required: false
         default: "n"
 
+permissions:
+  contents: write
+
 jobs:
   libcore:
     name: Native Build (LibCore)
