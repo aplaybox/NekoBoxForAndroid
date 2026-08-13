@@ -55,7 +55,23 @@ class ServiceNotification(
 
     var listenPostSpeed = true
 
+    // Last totals posted to the notification, used to skip no-op updates.
+    private var lastPostedTxTotal = -1L
+    private var lastPostedRxTotal = -1L
+
     suspend fun postNotificationSpeedUpdate(stats: SpeedDisplayData) {
+        // Skip the notification rebuild when nothing is flowing AND the totals
+        // haven't changed since last post. This avoids a wasted
+        // NotificationManager.notify() (which crosses Binder) every tick when
+        // the device is idle but the VPN is up — a common battery drain.
+        if (stats.txRateProxy == 0L && stats.rxRateProxy == 0L &&
+            stats.txRateDirect == 0L && stats.rxRateDirect == 0L &&
+            stats.txTotal == lastPostedTxTotal && stats.rxTotal == lastPostedRxTotal
+        ) {
+            return
+        }
+        lastPostedTxTotal = stats.txTotal
+        lastPostedRxTotal = stats.rxTotal
         useBuilder {
             if (showDirectSpeed) {
                 val speedDetail = (service as Context).getString(
