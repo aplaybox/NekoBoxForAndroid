@@ -252,10 +252,24 @@ class BaseService {
             data.changeState(State.Stopping)
 
             runOnMainDispatcher {
-                data.connectingJob?.cancelAndJoin() // ensure stop connecting first
+                // Cancel any in-flight connect job. Use withTimeoutOrNull so that
+                // a stuck/native call cannot block the stop flow (and the FAB)
+                // indefinitely. 5s is generous: cancelAndJoin returns as soon as
+                // the job hits its next suspend point.
+                val job = data.connectingJob
+                if (job != null) {
+                    runCatching {
+                        withTimeoutOrNull(5000L) { job.cancelAndJoin() }
+                    }
+                    data.connectingJob = null
+                }
                 // we use a coroutineScope here to allow clean-up in parallel
                 coroutineScope {
-                    killProcesses()
+                    // killProcesses may do heavy IO (closing box, killing
+                    // subprocesses); run it on IO to keep Main free.
+                    withContext(Dispatchers.IO) {
+                        killProcesses()
+                    }
                     val data = data
                     if (data.closeReceiverRegistered) {
                         unregisterReceiver(data.receiver)
@@ -364,21 +378,26 @@ class BaseService {
             }
 
             data.changeState(State.Connecting)
-            runOnMainDispatcher {
+            data.connectingJob = runOnMainDispatcher {
                 try {
                     data.notification = createNotification(ServiceNotification.genTitle(profile))
 
-                    Executable.killAll()    // clean up old processes
-                    preInit()
-                    proxy.init()
-                    DataStore.currentProfile = profile.id
+                    // Move heavy IO/CPU work off the main thread so the UI (FAB)
+                    // stays responsive during connect. Cancellation is honored
+                    // at suspend points inside init()/startProcesses().
+                    withContext(Dispatchers.IO) {
+                        Executable.killAll()    // clean up old processes
+                        preInit()
+                        proxy.init()
+                        DataStore.currentProfile = profile.id
 
-                    proxy.processes = GuardedProcessPool {
-                        Logs.w(it)
-                        stopRunner(false, it.readableMessage)
+                        proxy.processes = GuardedProcessPool {
+                            Logs.w(it)
+                            stopRunner(false, it.readableMessage)
+                        }
+
+                        startProcesses()
                     }
-
-                    startProcesses()
                     data.changeState(State.Connected)
 
                     lateInit()

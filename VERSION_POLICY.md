@@ -42,37 +42,35 @@
 - 风险低，最坏情况 ECH 协商失败回退非 ECH
 - 回滚方案：git revert
 
-### sing-box: neko 1.12.x → 1.13.x  ⏸️ **暂不升级**
+### sing-box: neko 1.12.x → 1.13.x  ❌ **暂不升级（基于完整调研）**
 
-**调研结论：**
+**完整调研见 [RESEARCH_singbox_1.13.md](./RESEARCH_singbox_1.13.md)**
 
-**1.13.0 的重要变更（2026-08-09 发布 1.13.18）：**
-- 新增：naiveproxy outbound（仅 Apple/Android/Windows/部分 Linux）
-- 新增：NaiveProxy QUIC 支持 + ECH 支持
-- 新增：CCM/OCM 服务（Claude/OpenAI Code Multiplexer）
-- 新增：Tailscale system TUN interface
-- 新增：bind_address_no_port、TCP keep-alive 可配
-- 新增：kTLS、mTLS、curve preferences、pinned public key SHA256
-- 新增：ICMP echo 路由（reject/drop/reply）
-- 新增：interface address / preferred_by 路由规则
-- 新增：Wi-Fi state 监控（Linux/Windows）
-- 新增：auto_redirect pre-match + bypass action
-- 新增：Chrome Root Store 证书选项
-- **破坏性变更：** 删除 NaiveProxy 的 `certificate_public_key_sha256`
-- **要求：** Go 1.24+（我们已满足）
-- **Android 5.0 支持将移除**（需 `-legacy-android-5` 单独构建）
+**调研维度：**
+1. 生态现状：MatsuriDayo + starifly 的 sing-box fork **均无 1.13.x 分支**
+2. 1.13.0 新特性：NaiveProxy outbound、CCM/OCM、Tailscale TUN、ICMP 路由、kTLS、ECH 增强
+3. 破坏性变更：删除 NaiveProxy `certificate_public_key_sha256`、要求 Go 1.24+、Android 5.0 即将弃支持
+4. API 兼容性：`outbound.Register` 签名一致 ✅，但 `sing` v0.7→v0.8、`sing-tun` v0.7→v0.8 大版本升级，`tfo-go` 换包名
+5. 协议可用性：1.13 官方**无 snell/juicity**（starifly patch 必须重新移植），SSR option 有但 protocol 需确认
+6. 间接依赖：quic-go v0.52→v0.59、gomobile v0.1.8→v0.1.12、tailscale v1.80→v1.92、新增 anthropic/openai/cronet SDK
+7. 工作量估计：~30-65 工时（含 patch 移植、API 适配、CI 调试、真机测试）
+8. 风险：sing/sing-tun API break、gomobile 兼容、quic-go 行为变更、neko patch 冲突
 
-**为什么暂不升级：**
-1. **neko fork 还在 1.12.x**：MatsuriDayo/sing-box 1.12.x 最新是 `aed32ee` (1.12.19-neko-1, 2026-02-02)，没有 1.13.x 分支
-2. **neko fork 有大量自定义 patch**：直接 rebase 到 1.13.x 需要逐个验证 patch 兼容性，工作量巨大
-3. **starifly fork 也基于 1.12.x**：starifly/sing-box 1.12.x 最新 `7567ef4` (2026-07-26)，已包含 snell/xhttp 等扩展
-4. **1.13.x 的关键新特性**（naiveproxy outbound、CCM/OCM、Tailscale TUN）对 NB4A 用户非必需
-5. **稳定性优先**：1.13.18 虽然是稳定版，但 neko fork 生态尚未跟上，盲升会脱离生态
+**决策：暂不升级**
+- 生态未跟上（neko fork 无 1.13.x 分支）
+- 间接依赖大版本升级，API 适配工作量大
+- 无 Go 构建环境，无法本地验证
+- 收益有限（关键新特性对 NB4A 用户非必需）
+- 稳定性优先（1.13.18 虽稳定但 neko 生态未验证）
 
-**何时升级：**
-- 等 MatsuriDayo/sing-box 创建 1.13.x-neko 分支
-- 或 starifly fork 迁移到 1.13.x
-- 届时一起升级 sing-box + utls + quic-go + 其他间接依赖
+**替代方案：保持 1.12.x neko + starifly 扩展**
+- 当前 `starifly/sing-box 1.12.x` (`7567ef4`, 2026-07-26) 是 neko 1.12.x 最新
+- 等 MatsuriDayo/starifly 创建 1.13.x 分支后跟随升级
+
+**重新评估条件：**
+- MatsuriDayo/starifly 创建 1.13.x 分支
+- sing-box 1.13.20+（更稳定）
+- 有 Go 构建环境
 
 ### 其他依赖  ⏸️ **全部保持现状**
 
