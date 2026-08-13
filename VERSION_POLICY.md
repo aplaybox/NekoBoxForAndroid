@@ -16,25 +16,31 @@
 
 ## 升级决策记录
 
-### metacubex/utls: v1.8.4 → v1.8.7  ❌ **已回滚，不升级**
+### metacubex/utls: v1.8.4 → v1.8.7  ✅ **已升级**
+
+**完整调研见 [RESEARCH_utls_v1.8.7.md](./RESEARCH_utls_v1.8.7.md)**
 
 **调研过程：**
 - v1.8.4 → v1.8.7 共 5 个 commit：
-  1. `c6c374d4` Hide ALPN in ECH (2026-03-05) — ECH 客户端相关
+  1. `c6c374d4` Hide ALPN in ECH (2026-03-05) — ECH 隐私修复：ALPN 不再泄漏到 outer ClientHello
   2. `28786a97` README 修复 (2026-03-05) — 无代码变更
-  3. `5bd8c376` Expose ServerHello (un)marshal (2026-03-05) — 服务端相关
-  4. `7700575e` increase REALITY target TLS record buffer to 16 KiB (2026-06-26) — REALITY 服务端
-  5. `f7d52c22` lazy init reality server cert (2026-06-26) — REALITY 服务端
+  3. `5bd8c376` Expose ServerHello (un)marshal (2026-03-05) — 纯新增导出 API
+  4. `7700575e` REALITY 16KiB buffer (2026-06-26) — 服务端改动，客户端不受影响
+  5. `f7d52c22` lazy init reality server cert (2026-06-26) — 服务端改动，客户端不受影响
 
 **关键证据：**
-- sing-box 官方稳定版 v1.13.18 (2026-08-09) 仍使用 utls **v1.8.4**
-- 只有 sing-box v1.14.0-beta.14 (2026-08-11) 才升级到 v1.8.7
-- v1.8.4 已包含 v1.8.2 的 Chrome 120+ padding 修复（这是 sing-box 1.13.0-beta.6 升级时引入的关键修复）
-- v1.8.5-v1.8.7 主要是 REALITY 服务端和 ECH 改进，对 NB4A 客户端收益有限
+- sing-box 官方稳定版 v1.13.18 仍用 utls v1.8.4（保守）
+- sing-box v1.14.0-beta.14 已升级到 v1.8.7（上游已验证可用）
+- sing-box 1.12.x（neko base）使用 ECH（utls_client.go:218）→ **受益于 ALPN 泄漏修复**
+- sing-box 1.12.x 不含 REALITY 服务端代码 → 服务端改动无影响
+- sing-box 1.12.x 的 ALPN 处理通过字段赋值 + BuildHandshakeState 重建，不依赖 writeToUConn 副作用
+- 5 个 commit 无删除/修改导出 API 签名，仅新增 API
 
-**决策：回滚到 v1.8.4**
-- 我们基于 neko fork 的 sing-box 1.12.x，单独升 utls 可能与 1.12.x 的 reality/ECH 调用代码不兼容
-- 等 neko fork 升级到 sing-box 1.13.x 稳定版时，再随 sing-box 一起升级 utls
+**决策：升级到 v1.8.7**
+- ECH 隐私修复对 NB4A ECH 用户是实质收益
+- 无 API 破坏，向后兼容
+- 风险低，最坏情况 ECH 协商失败回退非 ECH
+- 回滚方案：git revert
 
 ### sing-box: neko 1.12.x → 1.13.x  ⏸️ **暂不升级**
 
