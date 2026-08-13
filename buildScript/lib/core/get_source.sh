@@ -9,7 +9,7 @@ pushd ..
 ####
 
 if [ ! -d "sing-box" ]; then
-  git clone --no-checkout https://github.com/aplaybox/sing-box.git
+  git clone --no-checkout https://github.com/masgzy/sing-box.git
 fi
 pushd sing-box
 git fetch origin 1.12.x-neko125 2>/dev/null || true

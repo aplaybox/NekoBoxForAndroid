@@ -41,11 +41,11 @@ fun Project.requireLocalProperties(): Properties {
 
 fun Project.setupCommon() {
     android.apply {
-        buildToolsVersion = "35.0.1"
-        compileSdk = 35
+        buildToolsVersion = "36.0.0"
+        compileSdk = 36
         defaultConfig {
             minSdk = 21
-            targetSdk = 35
+            targetSdk = 36
         }
         buildTypes {
             getByName("release") {
@@ -53,11 +53,11 @@ fun Project.setupCommon() {
             }
         }
         compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_1_8
-            targetCompatibility = JavaVersion.VERSION_1_8
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
         }
         (android as ExtensionAware).extensions.getByName<KotlinJvmOptions>("kotlinOptions").apply {
-            jvmTarget = JavaVersion.VERSION_1_8.toString()
+            jvmTarget = JavaVersion.VERSION_17.toString()
         }
         lint {
             showAll = true
@@ -141,7 +141,8 @@ fun Project.setupAppCommon() {
 }
 
 fun Project.setupApp() {
-    val pkgName = requireMetadata().getProperty("PACKAGE_NAME")
+    // Allow CI to override package name via env var (e.g. top.nb4a.m3e for Compose variant)
+    val pkgName = System.getenv("PACKAGE_NAME") ?: requireMetadata().getProperty("PACKAGE_NAME")
     val verName = requireMetadata().getProperty("VERSION_NAME")
     val verCode = (requireMetadata().getProperty("VERSION_CODE").toInt()) * 5
     android.apply {
