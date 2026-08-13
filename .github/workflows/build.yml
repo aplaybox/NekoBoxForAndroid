@@ -10,17 +10,6 @@ on:
       release_tag:
         description: "Release tag (override, default: v{VERSION_NAME})"
         required: false
-  push:
-    branches:
-      - main
-    paths:
-      - 'nb4a.properties'
-      - 'libcore/**'
-      - 'app/**'
-      - 'buildScript/**'
-      - 'buildSrc/**'
-      - '.github/workflows/build.yml'
-
 jobs:
   libcore:
     name: Native Build (LibCore)
